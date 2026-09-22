@@ -1,0 +1,8 @@
+.DS_Store
+DerivedData/
+*.xcuserstate
+xcuserdata/
+ChatPilotIOS/ChatPilot.xcodeproj/
+ChatPilotIOS/.build/
+ChatPilotIOS/.swiftpm/
+ChatPilotIOS/build/

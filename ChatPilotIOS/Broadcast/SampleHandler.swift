@@ -61,8 +61,9 @@ final class SampleHandler: RPBroadcastSampleHandler {
     }
 
     private func allowed(_ control: Control) -> Bool {
-        !ended && !paused && SharedStore.settings.consent && control.permitsAnalysis() &&
-        (SharedStore.read("stop.json", as: StopSignal.self)?.at ?? .distantPast) < control.startedAt
+        AnalysisPolicy.permits(ended: ended, paused: paused, consent: SharedStore.settings.consent,
+                               control: control,
+                               stop: SharedStore.read(SharedFile.stop, as: StopSignal.self))
     }
 
     private func process(_ sample: CMSampleBuffer) {
@@ -139,7 +140,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
     private func tick() {
         guard !ended else { return }
         let control = SharedStore.control
-        if let stop = SharedStore.read("stop.json", as: StopSignal.self), stop.at >= control.startedAt {
+        if let stop = SharedStore.read(SharedFile.stop, as: StopSignal.self), stop.at >= control.startedAt {
             finish("已按你的要求停止屏幕广播。")
             return
         }
@@ -173,7 +174,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
     }
     private func publish() {
         state.updated = Date()
-        do { try SharedStore.write(state, to: "state.json") }
+        do { try SharedStore.write(state, to: SharedFile.state) }
         catch {
             cancelRequest()
             // Fail closed if the shared state cannot be safely delivered.
@@ -194,6 +195,6 @@ final class SampleHandler: RPBroadcastSampleHandler {
         state.languages = []
         state.session = ""
         state.updated = Date()
-        try? SharedStore.write(state, to: "state.json")
+        try? SharedStore.write(state, to: SharedFile.state)
     }
 }
