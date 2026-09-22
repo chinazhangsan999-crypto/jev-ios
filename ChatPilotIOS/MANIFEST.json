@@ -1,0 +1,11 @@
+{
+  "Broadcast/SampleHandler.swift": "ce3f38ae634ef2b8e058083285afba5ea473345edcc2fa5a0a4e0e490e8a9a10",
+  "Broadcast/ScreenReader.swift": "db01338969c92e1c4b74133e4eaa2ebb007e093761cb2f11b19209378f6f9a01",
+  "CHAT_CONTEXT.md": "f00699eb76f21dc8135064a789d2797779ed4852eb32ae9bad0916d13e69332d",
+  "IMPLEMENTATION_STATUS.md": "ee090b03a6e22c5d56ec46150e16de66367996fd0d1441a4d980cdf18b84a8ae",
+  "START_HERE.md": "7bd5dfc165ad3e1eea27babd877195213a498608dc41175c72ac935de584b2f9",
+  "Shared/KeychainStore.swift": "f394283655be631d361c57690f6b835ffbae603e701467c0de3dd62a50dc096f",
+  "Shared/ModelClient.swift": "22891920de6fab25790a0a5fc8bf14122e8e30486c2c925bb7855ca2a47c6a25",
+  "Shared/Models.swift": "8df1087d380e0149158bc28db86980e589234a61779a3f81eec62573e94187d3",
+  "Shared/SharedStore.swift": "5fffb289fc10ac958fc56547293a0f6e522dd90cb018b81b164fadb72d85afdf"
+}
