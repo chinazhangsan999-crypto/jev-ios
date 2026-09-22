@@ -3,10 +3,15 @@ import Security
 
 enum KeychainStore {
     private static var query: [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: "ChatPilot.ProviderKey",
-         kSecAttrAccount as String: "api-key",
-         kSecAttrAccessGroup as String: Bundle.main.object(forInfoDictionaryKey: "KeychainGroup") as? String ?? ""]
+        var value: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "ChatPilot.ProviderKey",
+            kSecAttrAccount as String: "api-key"
+        ]
+        if let group = Bundle.main.object(forInfoDictionaryKey: "KeychainGroup") as? String, !group.isEmpty {
+            value[kSecAttrAccessGroup as String] = group
+        }
+        return value
     }
 
     static func save(_ key: String) throws {
@@ -37,5 +42,6 @@ enum KeychainStore {
         return key
     }
 
-    static func delete() { SecItemDelete(query as CFDictionary) }
+    @discardableResult
+    static func delete() -> OSStatus { SecItemDelete(query as CFDictionary) }
 }

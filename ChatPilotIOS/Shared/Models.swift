@@ -1,6 +1,6 @@
 import Foundation
 
-struct Settings: Codable {
+struct Settings: Codable, Equatable {
     var endpoint = "https://openrouter.ai/api/v1/chat/completions"
     var model = ""
     var replyLanguage = "越南语"
@@ -27,7 +27,7 @@ struct Candidate: Codable, Equatable {
     var translation: String
 }
 
-struct SuggestionPayload: Codable {
+struct SuggestionPayload: Codable, Equatable {
     var summary: String
     var replies: [Candidate]
 
@@ -40,11 +40,16 @@ struct SuggestionPayload: Codable {
             text = lines.joined(separator: "\n")
         }
         guard let data = text.data(using: .utf8) else { throw PilotError.response }
-        let result = try JSONDecoder().decode(SuggestionPayload.self, from: data)
-        guard result.replies.count == 3,
-              result.replies.allSatisfy({ !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.text.count <= 500 && $0.translation.count <= 1000 }),
-              Set(result.replies.map(\.text)).count == 3 else { throw PilotError.response }
-        return result
+        let decoded = try JSONDecoder().decode(SuggestionPayload.self, from: data)
+        let replies = decoded.replies.map {
+            Candidate(text: $0.text.trimmingCharacters(in: .whitespacesAndNewlines),
+                      translation: $0.translation.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        guard replies.count == 3,
+              replies.allSatisfy({ !$0.text.isEmpty && $0.text.count <= 500 && $0.translation.count <= 1000 }),
+              Set(replies.map { $0.text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current) }).count == 3,
+              decoded.summary.count <= 2000 else { throw PilotError.response }
+        return SuggestionPayload(summary: decoded.summary.trimmingCharacters(in: .whitespacesAndNewlines), replies: replies)
     }
 }
 
@@ -59,7 +64,22 @@ struct Control: Codable {
     }
 }
 
+enum SharedFile {
+    static let settings = "settings.json"
+    static let control = "control.json"
+    static let state = "state.json"
+    static let stop = "stop.json"
+}
+
 struct StopSignal: Codable { var at = Date() }
+
+enum AnalysisPolicy {
+    static func permits(ended: Bool, paused: Bool, consent: Bool, control: Control,
+                        stop: StopSignal?, now: Date = Date()) -> Bool {
+        !ended && !paused && consent && control.permitsAnalysis(now: now) &&
+        (stop?.at ?? .distantPast) < control.startedAt
+    }
+}
 
 /// Shared deterministic state machine; no screen data is stored by this type.
 struct ContextGate {

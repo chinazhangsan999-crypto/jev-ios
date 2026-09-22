@@ -1,40 +1,35 @@
-# 交接时的真实进度
+# 实施状态
 
-日期：2026-09-22。
+更新日期：2026-09-22。
 
-## 已写入的源码（共六个文件，均为未经编译的草稿）
+## 已实现（源码层面）
 
-| 文件 | 内容 | 状态 |
-| --- | --- | --- |
-| Shared/Models.swift | 配置、候选 JSON 解析、控制租约、广播状态与新鲜度判断 | 草稿，未编译、未测试 |
-| Shared/SharedStore.swift | App Group 内共享 JSON 读写、数据保护 | 草稿，未编译；尚未实现清理生命周期 |
-| Shared/KeychainStore.swift | API Key 共享钥匙串存取 | 草稿，未编译；未配置签名与共享组 |
-| Shared/ModelClient.swift | HTTPS 模型请求、禁重定向、响应大小限制、三候选解析 | 草稿，未编译、未调用真实 API |
-| Broadcast/ScreenReader.swift | 屏幕方向、竖屏裁剪、缩放、Vision OCR、语言列表检查 | 草稿，未编译、未真机验证 |
-| Broadcast/SampleHandler.swift | 广播生命周期、单帧队列、节流、会话校验、模型请求取消 | 草稿，未编译；需重点审查并发与资源限制 |
+- SwiftUI 主 App 设置页、API Key 共享钥匙串、系统广播选择器、状态轮询、停止与临时数据清理。
+- 主 App 与回复键盘已补充状态层级、密钥保存提示、操作引导、Dynamic Type、VoiceOver 标签及至少 44 点的原生交互控件；视觉效果仍待 Xcode Preview/模拟器核对。
+- ReplayKit Broadcast Upload Extension：单帧背压、方向处理、竖屏区域裁剪、Vision OCR、支持语言运行时筛选、内容指纹、稳定/间隔节流、旧请求取消、会话代次校验、响应大小限制及故障关闭。
+- 回复键盘：明确连接当前会话、仅可见时续租、显示摘要/三条候选/译文、点击时重新检查新鲜度和 context ID、只填入不发送。
+- App Group 单写者文件协议、共享 Keychain（键盘无权限）、Info.plist、entitlements、隐私清单和 XcodeGen 配置。
+- 单元测试：新增可在 Linux/macOS 执行的 Swift Package 测试，并保留 iOS XCTest；覆盖不安全 URL/坏响应、严格三候选、旧代次、暂停/停止/无同意时零许可、过期候选、Keychain 错误文案。
+- 中文编译、签名、安装、使用、数据范围及故障排查说明；新增 macOS 环境检查、模拟器构建和 development IPA 归档脚本。
 
-## 还没有实现
+## 已检查
 
-- 主 App 页面、屏幕广播选择器。
-- 广播扩展草稿已补写，但尚未配置工程目标，无法视为已运行的扩展。
-- 自定义键盘 UI、候选刷新、会话重新连接、填入动作。
-- Xcode 工程、XcodeGen 配置、Info.plist、entitlements、签名配置。
-- 编译、自动测试、CI、真机测试、IPA、TestFlight。
+- 在 Linux 使用 Swift 6.2.4 成功构建 `ChatPilotCore` 并运行 7 项测试；另对所有 Swift 文件执行 parser 检查。
+- 使用 Python `plistlib` 检查所有 plist/entitlements/privacy manifest。
+- 使用 Ruby YAML 解析器检查 `project.yml`。
 
-## 环境限制
+以上检查不是 Xcode 编译。
 
-本轮执行环境为 Linux，未发现 swift 命令，没有 Xcode／iOS SDK。未执行 Swift 编译，未在模拟器或 iPhone 上运行。
+## 未编译 / 未实测
 
-## 代码审查注意
+当前执行环境不是 macOS，没有 Xcode、iOS SDK 或 iOS 模拟器，因此尚未执行 XcodeGen 生成后的 `xcodebuild` 或 iOS XCTest target。可移植 Swift Package 测试已运行，但没有生成 IPA。
 
-- 模型名称是空值，必须配置有效模型；OpenRouter 地址只作为可编辑默认示例，模型调用有独立费用。
-- 文本框 API 地址限制为无查询参数的 HTTPS 完整路径；需要其他认证协议时另行设计。
-- Control 的默认 session 是随机 UUID，真实组件必须先初始化共享控制文件，不能依赖每次读取缺失文件后的默认值。
-- SharedStore 采用原子替换但尚无多进程写入协调；给控制、状态、配置分配明确的写入者，解决竞争与错误处理。
-- 拟使用键盘心跳和限时租约限制采集，但目前只有数据结构和判定函数，尚未接入帧处理。
-- BroadcastState 包含 sourcePreview 字段，若写入临时文件必须明示保存范围、清理策略并测试。截图不得写盘。
-- 3 条候选的解析是草稿策略，需测试代码围栏、空文本、重复候选、非 JSON、响应缺字段及过大响应。
-- 所有候选新鲜度判断必须在填入时重新验证，不能只在渲染键盘时检查。
-- Swift 并发检查、iOS API availability、扩展受限 API 需由 Xcode 编译发现并修正。
+尚未在 iPhone 上验证：签名和 capability、ReplayKit 与第三方聊天 App/键盘同时运行、主 App 后台、锁屏恢复、广播中断、键盘高度、长时间内存/耗电/发热、网络延时、不同屏幕与聊天布局、越南语声调 OCR、群聊或横屏。App Store/TestFlight 未提交且不保证审核结果。
 
-用户在开发中途要求转为“建立云端任务并打包相关聊天记录”。之后助手误解了一句关于本地登录的澄清，短暂补写了广播草稿；用户已再次澄清，目标仍是云端任务。所有源码在此保存进度，没有伪装成完整实现。
+## 安全边界与已知限制
+
+- 第一版仅竖屏单聊；左右位置不是身份认证。
+- ReplayKit 不提供可靠的前台 App 身份。本实现以键盘可见心跳、用户连接、会话 ID、短期候选和切换后重新连接降低误用，但不能构成 App 白名单隔离。
+- OCR 文本会发往用户配置的模型服务；截图不写盘、不上传，不采集音频。
+- 临时上下文会写入受数据保护的共享容器以供扩展通信，不应描述成“完全不落盘”。
+- 要发布或真机安装，必须把 `com.example`、App Group、Keychain Group 和 Team 替换为开发者实际值。
